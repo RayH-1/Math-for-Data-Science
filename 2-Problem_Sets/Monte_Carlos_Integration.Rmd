@@ -1,0 +1,100 @@
+---
+title: 'Lab 6: Integrals'
+author: "Ray Hossain"
+date: "2023-10-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Monte Carlo Integration
+
+1)  Make a function as specified
+
+```{r}
+monte.fun <- function(x) {
+  result = (1/sqrt(x+2))^(x*exp(1) + (x^3)) +
+           (x^3)/5
+  return(result)
+}
+```
+
+2)  Graph said function from X is an element from 0 to 5.
+
+```{r}
+curve(monte.fun, from = 0, to = 5, ylab = "y")
+```
+
+3)  Randomly sample points in the rectangle.
+
+```{r}
+n_points <- 1000
+
+points <- data.frame(x = runif(n_points, min = 0, max = 5),
+                     y = runif(n_points, min = 0, max = 25))
+```
+
+3)  Plot the points
+
+```{r}
+library(ggplot2)
+
+points %>% ggplot() +
+  geom_point(mapping = aes(x = x, y = y)) +
+  geom_point(
+    mapping = aes(x = x, y = y), data = points,
+    colour = 'lavender', size = 0
+  )
+```
+
+4)  Create a column in the dataset that assigns a new value in a column to whether the point is above or below the curve
+
+```{r}
+points$i <- if_else(points$y < monte.fun(points$x), 1, 0)
+
+points$i_f <- as.factor(points$i) # for easier plotting
+```
+
+5)  Graph it
+
+```{r}
+
+points %>% ggplot(
+  aes(x, color = i_f)) + 
+  geom_point(aes(x = x, y = y)) +
+  geom_function(fun = monte.fun, color = 'red') +
+  xlim(0,5) + 
+  ylim(0, 25)
+  scale_color_manual(values = c("black", "red"))
+```
+
+6)  Find the probability
+
+```{r}
+p <- mean(points$i)
+```
+
+7)  Find approximation
+
+```{r}
+5*25 * p
+```
+
+8)  Put everything into a function
+
+```{r}
+mcint <- function(n) {
+  set.seed(127)
+  points <- data.frame(x = runif(n, min = 0, max = 5),
+                       y = runif(n, min = 0, max = 25))
+  points$i <- if_else(points$y < monte.fun(points$x), 1, 0)
+  estimate <- 5*25*mean(points$i)
+  return(estimate)
+}
+
+mcint(1000)
+mcint(10000)
+mcint(100000)
+```
