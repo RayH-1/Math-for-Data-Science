@@ -1,0 +1,194 @@
+---
+title: "Math for Data Science: Lab 8"
+output: pdf_document
+author: "Prof. Asya Magazinnik"
+date: "2023-14-11"
+header-includes:
+  - \usepackage{comment}
+params:
+  soln: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Matrix Algebra and Calculus: An Application to Linear Regression
+
+Today we will practice matrix algebra and calculus with an application that you will get to know very well: linear regression. For now, we will put aside many (very important) issues around causal and statistical inference, and just think of regression as a predictive or descriptive exercise: what is the best linear model that we can fit to our data?
+
+To make things concrete, let's use a real dataset of median home values in Boston. Load the dataset `BostonHousing` from the `mlbench` package. Take a look at the data. You can read the documentation \href{https://www.rdocumentation.org/packages/mlbench/versions/2.1-3.1/topics/BostonHousing}{here}. What are the included variables? What is the unit of analysis?
+
+```{r, echo = FALSE, include = TRUE}
+library(mlbench)
+data(BostonHousing)
+```
+
+Now, let's write down our linear model. We are interested in modeling the median home price in a Census tract (`medv`) as a function of the following variables:
+
+-   `crim`: per capita crime rate in the town
+-   `chas`: Charles River dummy variable (1 if tract is on the water, 0 if not)
+-   `nox`: nitric oxides concentration (parts per 10 million)
+-   `dis`: weighted distances to five Boston employment centres
+-   `ptratio`: pupil-teacher ratio by town
+-   `rad`: index of accessibility to radial highways
+
+We require that our model be linear in the parameters, which means that for any tract $i$, we can express the *response* $y_i$ (the median home value) as a *linear combination* of the variables plus some error term.
+
+```{=tex}
+\begin{align}
+y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + ... + \beta_p x_{ip} + \varepsilon_i 
+\end{align}
+```
+Our goal is to find the "best" values of $\beta_0, \beta_1, \beta_2, ..., \beta_p$, where "best" has a specific meaning: the ones that minimize the sum of squared errors over the dataset.[^1]
+
+[^1]: Why minimize this quantity and not something else? The short answer is that it has some nice statistical properties. But there are many other *loss functions* you might minimize, which you will meet later in this class and in Machine Learning.
+
+```{=tex}
+\begin{align}
+\min_{\beta_0, \beta_1, ..., \beta_p} \sum_{i=1}^n \varepsilon_i^2 = \min_{\beta_0, \beta_1, ..., \beta_p} \sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_{i1} - \beta_2 x_{i2} - ... - \beta_p x_{ip})^2
+\end{align}
+```
+Before we go on, let's set this up as a maximization problem in the way we are familiar with: as a system of equations to solve.
+
+```{=tex}
+\begin{align*}
+\frac{\partial}{\partial \beta_0} &\sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_{i1} - \beta_2 x_{i2} - ... - \beta_p x_{ip})^2 = 0 \\
+\frac{\partial}{\partial \beta_1} &\sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_{i1} - \beta_2 x_{i2} - ... - \beta_p x_{ip})^2 = 0 \\
+\frac{\partial}{\partial \beta_2} &\sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_{i1} - \beta_2 x_{i2} - ... - \beta_p x_{ip})^2 = 0 \\
+&... \\
+\frac{\partial}{\partial \beta_n} &\sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_{i1} - \beta_2 x_{i2} - ... - \beta_p x_{ip})^2 = 0 \\
+\end{align*}
+```
+But we won't go this route today. Instead, we'll solve the same problem using linear algebra and calculus. And you'll see that, once you know the basic rules, the matrix route is the more efficient one.
+
+Let's write what is represented by Equation (2) above in matrix form:
+
+```{=tex}
+\begin{align}
+\begin{bmatrix} 
+y_1 \\ y_2 \\ ... \\ y_n
+\end{bmatrix} = 
+\begin{bmatrix} 
+1 & x_{11} & x_{12} & ... & x_{1p} \\
+1 & x_{21} & x_{22} & ... & x_{2p} \\
+... \\
+1 & x_{n1} & x_{n2} & ... & x_{np}
+\end{bmatrix} 
+\begin{bmatrix}
+\beta_0 \\ \beta_1 \\ ... \\ \beta_p
+\end{bmatrix}
++ 
+\begin{bmatrix}
+\varepsilon_1 \\ \varepsilon_2 \\ ... \\ \varepsilon_n
+\end{bmatrix}
+\end{align}
+```
+Let's collapse this into:
+
+```{=tex}
+\begin{equation}
+\label{eq:mat_reg}
+\mathbf{Y} = \mathbf{X} \beta + \varepsilon
+\end{equation}
+```
+where:
+
+-   $\mathbf{Y}$ ($n \times 1$) is called the **response vector**
+-   $\mathbf{X}$ ($n \times p+1$) is called the **design matrix**
+-   $\beta$ ($p+1 \times 1$) is our vector of **coefficients**
+-   $\varepsilon$ ($n \times 1$) is our vector of **error terms**
+
+Now, let's write the sum of squared error minimization problem in matrix form:
+
+```{=tex}
+\begin{align}
+\sum_{i=1}^n \varepsilon_i^2 = \begin{bmatrix}
+ \varepsilon_1 &  \varepsilon_2 & ... &  \varepsilon_n 
+\end{bmatrix} 
+\begin{bmatrix}
+\varepsilon_1 \\ \varepsilon_2 \\ ... \\ \varepsilon_n 
+\end{bmatrix} = \varepsilon^T \varepsilon 
+\end{align}
+```
+And now we can do some matrix manipulation:
+
+```{=tex}
+\begin{align}
+\begin{aligned}
+\varepsilon^T \varepsilon &= (\mathbf{Y} - \mathbf{X} \beta)^T (\mathbf{Y} - \mathbf{X} \beta) \\
+&= \mathbf{Y}^T \mathbf{Y} - \mathbf{Y}^T \mathbf{X} \beta - \beta^T \mathbf{X}^T \mathbf{Y} + \beta^T \mathbf{X}^T \mathbf{X} \beta
+\end{aligned}
+\end{align}
+```
+We'll still take the first derivative and set it equal to 0 to solve for our error-minimizing $\beta$'s, but we'll do it with the whole vector of $\beta$'s in one shot:
+
+```{=tex}
+\begin{align}
+\label{eq:deriv}
+\frac{\partial}{\partial \beta} (\mathbf{Y}^T \mathbf{Y} - \mathbf{Y}^T \mathbf{X} \beta - \beta^T \mathbf{X}^T \mathbf{Y} + \beta^T \mathbf{X}^T \mathbf{X} \beta) &= \frac{\partial}{\partial \beta} \mathbf{Y}^T \mathbf{Y} - \frac{\partial}{\partial \beta} \mathbf{Y}^T \mathbf{X} \beta - \frac{\partial}{\partial \beta}  \beta^T \mathbf{X}^T \mathbf{Y} + \frac{\partial}{\partial \beta} \beta^T \mathbf{X}^T \mathbf{X} \beta
+\end{align}
+```
+Now, please take the following steps:
+
+1.  Use the handy \href{https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf}{Matrix Cookbook}[^2] to show that Equation \ref{eq:deriv} reduces to:
+
+[^2]: Section 2.4, Derivatives of Matrices, Vectors and Scalar Forms
+
+```{=tex}
+\begin{equation}
+\label{eq:deriv_reduced}
+-2 \mathbf{X}^T \mathbf{Y} + 2 \mathbf{X}^T \mathbf{X} \beta
+\end{equation}
+```
+2.  Set Equation \ref{eq:deriv_reduced} equal to 0 and solve for $\hat{\beta}$. Show that:
+
+```{=tex}
+\begin{equation}
+\label{eq:beta_hat}
+\hat{\beta} = (\mathbf{X}^T \mathbf{X})^{-1} \mathbf{X}^T \mathbf{Y}
+\end{equation}
+```
+3.  Using the `BostonHousing` data, create your design matrix and response vector.[^3]
+
+[^3]: Hint: for this next part, your design matrix needs to be a matrix, not a data frame. Some annoying little data manipulations might be needed to get it into that form.
+
+```{r, echo = TRUE, include = TRUE}
+
+one_col <- 1
+
+selected <- BostonHousing %>% 
+  select(dis, rad)
+
+df <- cbind(one_col, selected)
+
+matrix <- as.matrix(df)
+response <- as.matrix(BostonHousing$medv)
+```
+
+4.  Manually compute the $\hat{\beta}$ vector that you derived in Equation \ref{eq:beta_hat}.[^4]
+
+[^4]: Hint: you can use the `solve` function to compute a matrix inverse.
+
+```{r, echo = TRUE, include = TRUE}
+beta <- solve((t(matrix)%*%matrix))%*%(t(matrix)%*%response)
+
+beta
+```
+
+5.  Check your answer using `R`'s built-in regression function `lm`.
+
+```{r, echo = TRUE, include = TRUE}
+betalm <- lm(response ~ matrix)
+```
+
+6.  Using Equation \ref{eq:mat_reg} above, compute the predicted values: $\hat{\mathbf{Y}} = \mathbf{X} \beta$. Compare to the predictions generated using the built-in `predict` function in `R`.
+
+```{r, echo = TRUE, include = TRUE}
+predictions_predict <- predict(betalm)
+
+predictions <- matrix%*%beta
+
+head(predictions_predict)
+head(predictions)
+```

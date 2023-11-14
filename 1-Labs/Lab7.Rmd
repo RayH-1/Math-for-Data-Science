@@ -13,26 +13,29 @@ params:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## The EM Algorithm     
+## The EM Algorithm
 
 Today we will learn one of the most powerful tools in statistical learning: The Expectation-Maximization (EM) Algorithm (Dempster, Laird, and Rubin 1977). The EM Algorithm can be used to find Maximum Likelihood parameters of a statistical model with **latent variables**, which are hidden or unobserved characteristics of our data --- a case when straightforward MLE fails us.
 
 ### Setup
-Consider a favorite illustration of EM: eruptions of Old Faithful, a geyser in Yellowstone National Park.^[Old Faithful has a 24/7 webcam that you can watch here:  https://www.nps.gov/yell/learn/photosmultimedia/webcams.htm.] Old Faithful has two "eruptive modes": short eruptions separated by brief waiting periods, and longer eruptions separated by longer waiting periods. This pattern is captured in the dataset `faithful`, which comes preloaded in base `R`. 
+
+Consider a favorite illustration of EM: eruptions of Old Faithful, a geyser in Yellowstone National Park.[^1] Old Faithful has two "eruptive modes": short eruptions separated by brief waiting periods, and longer eruptions separated by longer waiting periods. This pattern is captured in the dataset `faithful`, which comes preloaded in base `R`.
+
+[^1]: Old Faithful has a 24/7 webcam that you can watch here: <https://www.nps.gov/yell/learn/photosmultimedia/webcams.htm>.
 
 The dataset contains 272 eruptions of Old Faithful, with 2 variables:
 
-- `eruptions`, which captures the duration of each eruption (in minutes) 
-- `waiting`, which captures how much time elapses from the eruption to the next eruption (in minutes)
+-   `eruptions`, which captures the duration of each eruption (in minutes)
+-   `waiting`, which captures how much time elapses from the eruption to the next eruption (in minutes)
 
-Begin by loading this dataset, taking a look at it, and reading the documentation. 
+Begin by loading this dataset, taking a look at it, and reading the documentation.
 
 ```{r, echo = TRUE, include = TRUE}
 data(faithful)
 head(faithful)
 ```
 
-Let's take a look at the distribution of eruption durations in this dataset. 
+Let's take a look at the distribution of eruption durations in this dataset.
 
 ```{r, echo = TRUE, include = TRUE}
 eruptions  = as.matrix(faithful[, 1, drop = FALSE])
@@ -41,9 +44,9 @@ h <- hist(eruptions, col = "grey", bor = "darkgrey", breaks = 20, prob = TRUE,
 lines(density(eruptions), col = 2, lwd = 2)
 ```
 
-You can clearly see the two eruption modes in the two peaks of this density plot. 
+You can clearly see the two eruption modes in the two peaks of this density plot.
 
-We're going to model the eruption duration of Old Faithful as a **Gaussian mixture**, or a mixture of two Normal distributions, each having a different mean and variance. An eruption can either be of the short type or the long type, corresponding to a different (unobserved) geological process going on underneath the water's surface. 
+We're going to model the eruption duration of Old Faithful as a **Gaussian mixture**, or a mixture of two Normal distributions, each having a different mean and variance. An eruption can either be of the short type or the long type, corresponding to a different (unobserved) geological process going on underneath the water's surface.
 
 Define $Z_1$ as a random variable that determines whether or not an eruption belongs to the first (short) type:
 
@@ -52,21 +55,20 @@ Z_1 = \left\{ \begin{array}{cl}
       0 & \text{ if eruption is long type}  \\
       1 & \text{ if eruption is short type} 
     \end{array} \right.
-$$
-Define $Z_2$ similarly for the second (long) type of eruption: 
+$$ Define $Z_2$ similarly for the second (long) type of eruption:
 
 $$
 Z_2 = \left\{ \begin{array}{cl}
       0 & \text{ if eruption is short type}  \\
       1 & \text{ if eruption is long type} 
     \end{array} \right.
-$$
-Suppose that eruptions are of the short type with some probability $\pi_1$ and of the long type with some probability $\pi_2$. We can assume that $0 < \pi_1 < 1$, $0 < \pi_2 < 1$, and $\pi_1 + \pi_2 = 1$ (there are no other types). However, we can never *know* which type any given eruption is, because we can't look under the surface. 
+$$ Suppose that eruptions are of the short type with some probability $\pi_1$ and of the long type with some probability $\pi_2$. We can assume that $0 < \pi_1 < 1$, $0 < \pi_2 < 1$, and $\pi_1 + \pi_2 = 1$ (there are no other types). However, we can never *know* which type any given eruption is, because we can't look under the surface.
 
-**The task is to produce an MLE estimate for the type probabilities and the means and variances of the two eruption types.** 
+**The task is to produce an MLE estimate for the type probabilities and the means and variances of the two eruption types.**
 
 ### Attempting Maximum Likelihood Estimation
-Let $X$ be the random variable representing the duration of eruption. Then, use the Law of Total Probability to write the PDF of $X$ as: 
+
+Let $X$ be the random variable representing the duration of eruption. Then, use the Law of Total Probability to write the PDF of $X$ as:
 
 $$
 \begin{aligned}
@@ -75,7 +77,7 @@ Pr(X=x) &= Pr(Z_1 = 1) Pr(X=x ~|~ Z_1 = 1) + Pr(Z_2 = 1) Pr(X=x ~|~ Z_2 = 1) \\
 \end{aligned}
 $$
 
-With this PDF, we can write down the **likelihood** of this dataset. 
+With this PDF, we can write down the **likelihood** of this dataset.
 
 $$
 \mathcal{L}(x_1, ..., x_n ; \mu_1, \mu_2, \sigma_1, \sigma_2, \pi_1, \pi_2) = \prod_{i=1}^n \left( \pi_1 \mathcal{N}(x_i ~|~ \mu_1, \sigma_1) + \pi_2 \mathcal{N}(x_i ~|~ \mu_2, \sigma_2) \right) 
@@ -114,7 +116,7 @@ $$
 \end{aligned}
 $$
 
-Putting it all together, we have: 
+Putting it all together, we have:
 
 $$
 \begin{aligned}
@@ -122,7 +124,7 @@ $$
 \end{aligned}
 $$
 
-Normally, we would set this equal to 0 and solve for $\hat{\mu}_1$: 
+Normally, we would set this equal to 0 and solve for $\hat{\mu}_1$:
 
 $$
 \begin{aligned}
@@ -130,7 +132,7 @@ $$
 \end{aligned} 
 $$
 
-But we're not going to get any further with algebra. There is no *closed form solution* to this problem. 
+But we're not going to get any further with algebra. There is no *closed form solution* to this problem.
 
 ### Bayes' Rule to the Rescue
 
@@ -151,11 +153,11 @@ Pr(z_{1i}=1 ~|~ x_i ) &= \frac{f(x_i ~|~ z_{1i}=1) Pr(z_{1i}=1)}{f(x_i)} \\
 \end{aligned}
 $$
 
-From now on, let's call this thing $\gamma_{1i}$; similarly, let $\gamma_{2i} = Pr(z_{2i} = 1 ~|~ x_i)$. 
+From now on, let's call this thing $\gamma_{1i}$; similarly, let $\gamma_{2i} = Pr(z_{2i} = 1 ~|~ x_i)$.
 
 ### Returning to the Maximization Problem
 
-Let's proceed with the maximization problem for $\mu_1$, bracketing what to do with $\gamma_{1i}$ for the moment. (We will return to that issue shortly.) Solving for $\hat{\mu}$, we get:  
+Let's proceed with the maximization problem for $\mu_1$, bracketing what to do with $\gamma_{1i}$ for the moment. (We will return to that issue shortly.) Solving for $\hat{\mu}$, we get:
 
 $$
 \begin{aligned}
@@ -167,14 +169,13 @@ $$
 \end{aligned} 
 $$
 
-And for $\hat{\mu}_2$, you would get the same thing: 
-$$
+And for $\hat{\mu}_2$, you would get the same thing: $$
 \begin{aligned}
 \hat{\mu}_2 &= \frac{\sum_{i=1}^n \gamma_{2i} x_i}{\sum_{i=1}^n \gamma_{2i}}
 \end{aligned} 
 $$
 
-In similar fashion, we can find the MLE for $\hat{\sigma}_1$, $\hat{\sigma}_2$, $\hat{\pi}_1$, and $\hat{\pi}_2$ as: 
+In similar fashion, we can find the MLE for $\hat{\sigma}_1$, $\hat{\sigma}_2$, $\hat{\pi}_1$, and $\hat{\pi}_2$ as:
 
 $$
 \begin{aligned}
@@ -189,9 +190,9 @@ $$
 
 ### The EM Algorithm
 
-We are now ready for the EM Algorithm. The EM Algorithm proceeds as follows: 
+We are now ready for the EM Algorithm. The EM Algorithm proceeds as follows:
 
-1. **Initialize** your parameters ($\mu_1$, $\mu_2$, $\sigma_1$, $\sigma_2$, $\pi_1$, $\pi_2$) to some starting points. (Literally assign them some numbers; make some educated guesses based on your data.) Evaluate the log likelihood under these values. 
+1.  **Initialize** your parameters ($\mu_1$, $\mu_2$, $\sigma_1$, $\sigma_2$, $\pi_1$, $\pi_2$) to some starting points. (Literally assign them some numbers; make some educated guesses based on your data.) Evaluate the log likelihood under these values.
 
 $$
 \begin{aligned}
@@ -202,20 +203,18 @@ $$
 \end{aligned}
 $$
 
+2.  **E-Step**: Evaluate $\gamma_{1i} = Pr(z_{1i}=1 ~|~ x_i )$ under the current parameter values. Also evaluate $\gamma_{2i} = Pr(z_{2i}=1 ~|~ x_i)$. (These are called the *responsibilities*.)
 
+3.  **M-Step**: Using the $\gamma_{1i}$ and $\gamma_{2i}$ you found in step 2, update the parameters using the current responsibilities.
 
-2. **E-Step**: Evaluate $\gamma_{1i} = Pr(z_{1i}=1 ~|~ x_i )$ under the current parameter values. Also evaluate $\gamma_{2i} = Pr(z_{2i}=1 ~|~ x_i)$. (These are called the *responsibilities*.)
+4.  Evaluate the log likelihood with your new parameters and responsibilities.
 
-3. **M-Step**: Using the $\gamma_{1i}$ and $\gamma_{2i}$ you found in step 2, update the parameters using the current responsibilities. 
-
-4. Evaluate the log likelihood with your new parameters and responsibilities.  
-
-5. Check for **convergence**, which means that the log likelihood has not moved far from the log likelihood in the previous iteration. Once it stops moving, the algorithm stops. If you're not ready to stop yet, go back to step 2 and repeat; the current parameter values and responsibilities become the initial ones in the next round.
-
+5.  Check for **convergence**, which means that the log likelihood has not moved far from the log likelihood in the previous iteration. Once it stops moving, the algorithm stops. If you're not ready to stop yet, go back to step 2 and repeat; the current parameter values and responsibilities become the initial ones in the next round.
 
 ### Let's Try It for One Iteration!
 
-Prepare your data. Write a function to compute your log likelihood. 
+Prepare your data. Write a function to compute your log likelihood.
+
 ```{r, echo = TRUE, include = TRUE}
 X <- eruptions
 N <- length(X)
@@ -225,7 +224,8 @@ log.lik <- function(X, mu_1, mu_2, var_1, var_2, pi_1, pi_2) {
 }
 ```
 
-1. Initialize your parameters.
+1.  Initialize your parameters.
+
 ```{r, echo = TRUE, include = TRUE}
 pi_1 <- .5 
 pi_2 <- .5
@@ -244,15 +244,17 @@ ll <- log.lik(X = X,
               var_2 = var_2)
 ```
 
-2. E-Step: evaluate the responsibilities using the initial parameter values. 
+2.  E-Step: evaluate the responsibilities using the initial parameter values.
+
 ```{r, echo = TRUE, include = TRUE}
 gamma_1 <- pi_1 * dnorm(X, mu_1, sd = sqrt(var_1)) / 
   (pi_1 * dnorm(X, mu_1, sd = sqrt(var_1)) + pi_2 * dnorm(X, mu_2, sd = sqrt(var_2)))
 gamma_2 <- pi_2 * dnorm(X, mu_2, sd = sqrt(var_2)) / 
   (pi_1 * dnorm(X, mu_1, sd = sqrt(var_1)) + pi_2 * dnorm(X, mu_2, sd = sqrt(var_2)))
-```  
+```
 
-3. M-Step: reestimate the parameter values using the responsibilities you just calculated in the E-Step.
+3.  M-Step: reestimate the parameter values using the responsibilities you just calculated in the E-Step.
+
 ```{r, echo = TRUE, include = TRUE}
 pi_1 <- sum(gamma_1)/N
 pi_2 <- sum(gamma_2)/N
@@ -260,9 +262,10 @@ mu_1 <-  sum(X * gamma_1) / sum(gamma_1)
 mu_2 <-  sum(X * gamma_2) / sum(gamma_2)
 var_1 <- sum((X - mu_1)^2 * gamma_1) / sum(gamma_1)
 var_2 <- sum((X - mu_2)^2 * gamma_2) / sum(gamma_2)
-```  
+```
 
-4. Evaluate the log-likelihood under the new responsibilities and parameter values. 
+4.  Evaluate the log-likelihood under the new responsibilities and parameter values.
+
 ```{r, echo = TRUE, include = TRUE}
 ll.new <- log.lik(X = X, 
               pi_1 = pi_1, 
@@ -273,12 +276,13 @@ ll.new <- log.lik(X = X,
               var_2 = var_2)
 ```
 
-5. Check convergence.
+5.  Check convergence.
+
 ```{r, echo = TRUE, include = TRUE}
 abs(ll - ll.new)
 ```
 
-### Finally, We Loop Until Convergence 
+### Finally, We Loop Until Convergence
 
 ```{r, echo = TRUE, include = TRUE}
 em_mixture <- function(starting_values, X, tol = .0001, maxits = 100) {
