@@ -1,0 +1,361 @@
+---
+title: "Lab 1"
+output:
+  html_document: default
+  pdf_document: default
+date: "2023-09-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Math for Data Science: Lab 1
+
+## Warm Up
+
+1.  R runs on a few different kinds of objects; let's get familiar with them.
+    a.  **Vectors:** Create a vector containing only the number 1. Create an empty vector of length 5. Create a vector with the numbers 1, 2, 3, 6, 5.
+    b.  **Data Frames:** Create an empty data frame with columns called x and y, both of length 5.
+
+```{r}
+
+vector_1 <- c(1)
+  
+empty_vector <- c(NA, NA, NA, NA, NA)
+  
+vector_2 <- c(1,2,3,6,5)
+
+data_frame1 <- data.frame(x = 5, y = 5)
+
+vector_1
+empty_vector
+vector_2
+data_frame1
+```
+
+*2. Learn how to index and summarize your data.*
+
+a\. Create a vector called nums containing the numbers 1, 6, 7, 8, 9.
+
+b\. Grab the second element of this vector.
+
+c\. Grab the second and third elements of this vector.
+
+d\. Grab all elements of this vector except the first.
+
+e\. Take the mean, minimum, maximum, and sum of this vector.
+
+f\. Find the proportion of elements of this vector that are greater than *5*.
+
+```{r}
+nums <- c(1,6,7,8,9) #a. Create a vector called nums containing the numbers 1, 6, 7, 8, 9.
+
+nums[2] #b. Grab the second element of this vector. 
+nums[2:3]
+nums[2:5] #d. Grab all elements of this vector except the first. 
+
+mean(nums)
+max(nums)
+sum(nums)
+
+mean(nums > 5) #f. Find the proportion of elements of this vector that are greater than 5. 
+```
+
+*3. Try out some basic probabilistic functions and operations.*
+
+a\. Compute 5! using the factorial function.
+
+```{r}
+factorial(5)
+```
+
+b\. Compute (5 4) using the choose function.
+
+```{r}
+choose(5,4)
+```
+
+c\. Use the sample function to do some random sampling, with and without replacement. Try to
+
+provide your own sampling probabilities.
+
+```{r}
+?sample
+
+sample(c(1:6), 5, replace = TRUE)
+sample(c(1:6), 5, replace = FALSE)
+
+```
+
+d\. Roll a die. Roll two fair dice. Roll a loaded die.
+
+```{r}
+roll_1 <- sample(1:6, 1, replace = TRUE)
+roll_1
+
+roll_2 <- sample(1:6, 2, replace = TRUE) #Replace because you want all the numbers to still be available
+roll_2
+
+loaded <- c(0.04, 0.2, 0.3, 0.4, 0.03, 0.03)
+loaded_roll <- sample(1:6, 1, replace = TRUE, prob = loaded)
+loaded_roll
+```
+
+e\. Learn about the set.seed command and try it out with your sampling. What does it do?
+
+***Note: Whenever you run a sample, set a seed so that you can go back to the previous seed and get the exact sample back. "For probabilistic stuff, don't need for deterministic"***
+
+```{r}
+set.seed(123)
+sample(1:6, 6, replace = TRUE)
+sample(1:6, 6, replace = TRUE)
+
+set.seed(123)
+sample(1:6, 6, replace = TRUE) #the output of this should be the same as the output of the first sample.
+```
+
+------------------------------------------------------------------------
+
+## Simulation
+
+4\. We will now learn how to run a simulation. Recall the birthday problem from class. We will simulate
+
+this to see if the mathematical result we showed in class holds up.
+
+a\. Set a seed for reproducibility.
+
+```{r}
+set.seed(127)
+```
+
+b\. Start by creating one simulated class of 35 people. We will need a vector of randomly sampled
+
+birthdays. Assume that all birthdays occur with equal probability and assume away leap years.
+
+You can just label the days of the year from 1 to 365.
+
+```{r}
+## Sample from days of year (1:365), and select 35 students, WITH replacement because students can have the same birthday.
+birth_days <- sample(1:365, 35, replace = TRUE)
+
+birth_days
+```
+
+c\. Are there any repeat birthdays in your class? What are they?
+
+```{r}
+duplicates <- birth_days[duplicated(birth_days)] ## Return values where duplicated is TRUE
+duplicates
+```
+
+d\. Now we will walk step by step through running a simulation. In this simulation, we will randomly
+
+generate 100,000 fake classes and compute the average probability of having more than one of the
+
+same birthday in a class (the frequentist interpretation of probability). First, generate an empty
+
+vector called match of length 100,000 to hold our results.
+
+```{r}
+set.seed(100)
+
+n <- 100000
+matches <- rep(NA, n) # Empty list of size n (100,000)
+```
+
+e\. Write a loop that generates a fake class and saves the number of repeated birthdays in that class
+
+into your empty vector.
+
+```{r}
+for (i in 1:n) {
+  course <- sample(1:365, 35, replace = TRUE) # Sets 100,000 sets of 35 people classes
+  matches[i] <- sum(duplicated(course))
+}
+```
+
+f\. Summarize that output vector: what proportion of simulated classes have matching birthdays?
+
+```{r}
+prop.table(table(matches == 0))
+
+##81 perent of the birthdays match
+```
+
+g\. Let's compare our simulated result to the mathematical result from class (see slide 30). Compute
+
+the probability of matching birthdays using the formula we derived. (Note: the prod function
+
+may be helpful here.)
+
+```{r}
+k <- 35
+formula_result <- 1 - prod((365 - k + 1): 365)/365^k 
+
+formula_result
+0.81584/formula_result  # Formula result is only about 1 percent off the test result.
+```
+
+------------------------------------------------------------------------
+
+## Plotting
+
+*5. Now let's learn how to make plots. We'll recreate the plot from slide 31.*
+
+a\. First, write a loop to compute the probability of a birthday match for k = 1 to 100 people in the
+
+class. This time, let's save the output into a data frame with two variables, one for the x axis (k)
+
+and another for the y axis (probability of birthday match).
+
+```{r}
+# create data frame to save output
+to_plot <- data.frame(x = c(1:100), y = NA)
+
+#loop to compute probability
+for (k in c(1:100)) {
+  to_plot$y[k]<- 1 - prod((365-k+1):365)/365^k
+  }
+```
+
+b\. Use R's native plot function to make a quick plot.
+
+```{r}
+plot(to_plot$x, to_plot$y)
+```
+
+c\. This is ok, but we can do better. Install the ggplot package by typing install.packages("ggplot2")
+
+into your console. Load this package with the library(ggplot2) command.
+
+```{r}
+install.packages("ggplot2")
+library(ggplot2)
+```
+
+d\. Use ggplot to create a nicer plot, with axis labels, a title, and a red horizontal line at 0.5.
+
+```{r}
+ggplot(data = to_plot, aes(x = x, y = y)) +
+geom_point() +
+geom_hline(yintercept = 0.5, color = "red") +
+xlab("k") +
+ylab("probability of birthday match") +
+ggtitle("The Birthday Problem") +
+theme_minimal()
+```
+
+------------------------------------------------------------------------
+
+## The Drunken Passenger Problem
+
+*6. This is a common question in quantitative interviews. There are 100 passengers lined up to board an*
+
+*airplane with 100 seats. Each seat has been assigned by the airline to one of the passengers. The first*
+
+*passenger drunkenly sits down in a random seat. Each subsequent passenger takes their assigned seat*
+
+*if it's available, and otherwise sits in a random available seat. What is the probability that the last*
+
+*passenger in line gets to sit in their assigned seat?*
+
+a\. We will run another simulation to answer this question. Begin by creating a data frame with three
+
+columns: passenger which lists the passengers from 1 to 100; assigned which gives them their
+
+assigned seats from the airline; and seat, representing the seats the passengers end up in, which
+
+will begin by being empty and get filled over the simulation.
+
+```{r}
+#a. create data frame
+df <- data.frame(passenger = c(1:100), assigned = sample(100, 100, replace = FALSE))
+
+df$seat <- NA
+
+```
+
+b\. Let the first passenger pick a random seat. Fill in this value for seat in your data frame.
+
+```{r}
+# b. first passenger picks random seat
+df$seat[1] <- sample(df$assigned, 1)
+
+```
+
+c\. Now fill in the second passenger's seat. Do this step by step. First create a vector of available
+
+seats for the second passenger. Then give passenger 2 a seat using an ifelse statement.
+
+```{r}
+# c. second passenger's seat
+free_seats <- df$assigned[!df$assigned %in% df$seat]
+df$seat[2] <- ifelse(df$assigned[2] %in% df$seat, sample(free_seats, 1), df$assigned[2])
+
+```
+
+d\. With the same logic/syntax, write a loop assigning seats for passengers 3 through 100.
+
+```{r}
+# d. loop for all subsequent passengers
+for (i in c(3:100)) {
+df$seat[i] <- ifelse(df$assigned[i] %in% df$seat, sample(free_seats, 1), df$assigned[i])
+}
+```
+
+2
+
+e\. Now, wrap parts a-d up into a function that returns TRUE if the last passenger gets their assigned
+
+seat and FALSE otherwise. Run this function 10,000 times using the replicate function. What
+
+seems to be the probability of the last passenger getting their assigned seat?
+
+```{r}
+# e. now put this into a function
+sim_plane <- function() {
+df <- data.frame(passenger = c(1:100), assigned = sample(100, 100, replace = FALSE))
+df$seat <- NA
+df$seat[1] <- sample(df$assigned, 1)
+for (i in c(2:100)) {
+free_seats <- df$assigned[!df$assigned %in% df$seat]
+df$seat[i] <- ifelse(df$assigned[i] %in% df$seat, sample(free_seats, 1), df$assigned[i])
+}
+success <- df$assigned[100]==df$seat[100]
+return(success)
+}
+out <- replicate(10000, sim_plane())
+
+```
+
+f\. Adapt your function so that it accommodates an arbitrary number of passengers. Run it for a few
+
+different values for the number of passengers. Does the number of passengers matter?
+
+```{r}
+# f. adapt for arbitrary number of passengers
+sim_plane <- function(n) {
+df <- data.frame(passenger = c(1:n), assigned = sample(n, n, replace = FALSE))
+df$seat <- NA
+df$seat[1] <- sample(df$assigned, 1)
+for (i in c(2:n)) {
+free_seats <- df$assigned[!df$assigned %in% df$seat]
+df$seat[i] <- ifelse(df$assigned[i] %in% df$seat, sample(free_seats, 1), df$assigned[i])
+}
+success <- df$assigned[n]==df$seat[n]
+return(success)
+}
+out <- replicate(10000, sim_plane(n = 50))
+prop.table(table(out))
+
+out <- replicate(10000, sim_plane(n = 100))
+prop.table(table(out))
+
+out <- replicate(10000, sim_plane(n = 500))
+prop.table(table(out))
+```
+
+g\. Is there a mathematical/logical way to solve this problem? What is the intuition? (See solution to
+
+Exercise 59 in Blitzstein and Hwang.)

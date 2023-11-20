@@ -1,0 +1,77 @@
+---
+title: "Lab 2"
+output:
+  html_document: default
+  pdf_document: default
+date: "2023-09-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Math for Data Science: Lab 2
+
+## PMF Practice
+
+8.  Code up a small simulation to verify that this process indeed follows the hypergeometric distribution.
+    a.  First, create an urn with 10 white balls and 5 black balls in it, and generate 1000 iterations of 3 draws from this urn, without replacement. Save the number of white balls drawn in each iteration into a vector.
+
+```{r}
+# Create urn with 10 white balls and 5 black balls
+urn <- c(rep("white", 10), rep("black", 5))
+
+n_simulations <- 1000
+white_balls_drawn <- rep(NA, n_simulations)
+
+# Generate 1000 iterations of 3 draws from urn without replacement
+for (i in 1:n_simulations) {
+    draw <- sample(urn, size = 3, replace = FALSE)
+    white_balls_drawn[i] <- sum(draw == "white")
+}
+
+table(white_balls_drawn)
+
+```
+
+b.  Now, use the rhyper function in R to do the same thing. Summarize the two distributions you've made and compare them.
+
+```{r}
+white_balls_rhyper <- rhyper(n_simulations, m = 10, n = 5, k = 3)
+
+table(white_balls_rhyper)
+hist(white_balls_rhyper)
+summary(white_balls_rhyper)
+```
+
+c\. Use ggplot to generate a plot that has histograms of the two vectors, one on top of the other. Label your axes.
+
+```{r}
+library(ggplot2)
+
+toplot <- data.frame(x = white_balls_drawn, y = white_balls_rhyper)
+
+ggplot(toplot) +
+  geom_histogram(aes(x = white_balls_drawn), color = "gray25", fill = "gray26", alpha = 0.5) +
+  geom_histogram(aes(x = white_balls_rhyper), color = "blue", fill = "blue", alpha = 0.25) +
+  xlab("Number of white balls") +
+  ylab("Frequency") 
+```
+
+d\. Perform a Kolmogorov-Smirnov test to see if the two distributions are the same
+
+```{r}
+ks.test(white_balls_drawn, white_balls_rhyper)
+```
+
+------------------------------------------------------------------------
+
+Disease Testing Simulation We will now simulate the disease testing example from class. 1. First, create a vector called flu that determines whether every member of a population of size 100,000 is healthy or sick. Let the probability of being sick be 1%.
+
+2\. Now, create a vector called test that determines whether the person tested positive. Let the sensitivity of the test (the probability of identifying sick individuals as positive) be 0.95 and the specificity (the 1 probability of identifying healthy individuals as negative) be 0.95 as well. (You can put the flu vector and the test vector into the same data frame.) Add a column called accurate that equals TRUE when the test is accurate and FALSE when it is inaccurate.
+
+3\. What is the accuracy of the test? What is the probability of being sick given a positive result? What is the probability of being healthy given a negative result? How does this compare to what you mathematically derived using Bayes' Rule?
+
+4\. Suppose the company that designed the test has the opportunity to raise the specificity, while keeping the sensitivity fixed at 0.95. Plot the relationship between the specificity of the test and the probability of being sick given a positive result over the region from 0.95 to 1 (you can use intervals of .001). How should the company invest in raising specificity to yield the highest returns?
+
+5\. Now suppose there is a cost to raising specificity: for any amount by which you raise specificity, you lose the same amount of sensitivity. Put this situation into the same plot from (4) above. Should the company still pursue boosting specificity under these conditions? What if you lost triple the sensitivity?
