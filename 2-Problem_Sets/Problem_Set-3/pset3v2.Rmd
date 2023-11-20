@@ -46,17 +46,15 @@ b.  (6 points) Adapt the EM algorithm code from class to do the following:
 
 ```{r, echo = TRUE, include = TRUE}
 #--- WRITE A FUNCTION TO GET LOG LIKELIHOOD WHICH WILL BE PLACED INSIDE THE EM FUNCTION
-log.lik <- function(X, mu_1, mu_2, var_1, var_2, pi_1, pi_2) {
-  sum(log(pi_1 * dnorm(X, mu_1, sd = sqrt(var_1)) + pi_2 * dnorm(X, mu_2, sd = sqrt(var_2))))
-}
 
-##--- CREATE A FUNCTION TO GET EM 
-em_mixture <- function(starting_values, X, tol = .0001, maxits = 100) {
-  
-  # initialize convergence to false and iteration number to 0
+
+## Define the optimization function
+
+em_mixture <- function(starting_values, Y, tol = .0001, maxits = 100) {
   converged <- FALSE
   iter <- 0
-  N <- length(X)
+  N <- length(Y)
+  df <- tibble()
 
   # initialize starting values
   pi_1 <- starting_values$pi_1
@@ -66,72 +64,103 @@ em_mixture <- function(starting_values, X, tol = .0001, maxits = 100) {
   var_1 <- starting_values$var_1
   var_2 <- starting_values$var_2
   
-  while ((!converged) & (iter < maxits)) { 
-    # 1. Evaluate the log likelihood at the initial parameters
-    ll <- log.lik(X = X, 
-                  pi_1 = pi_1, 
+  # Loop until convergence
+  while ((!converged) & (iter < maxits)) {
+    # Evaluate the log likelihood at the initial parameters
+    ll <- log_lik(Y = Y,
+                  pi_1 = pi_1,
                   pi_2 = pi_2,
-                  mu_1 = mu_1, 
+                  mu_1 = mu_1,
                   mu_2 = mu_2,
-                  var_1 = var_1, 
+                  var_1 = var_1,
                   var_2 = var_2)
-    
-    # 2. E-Step
-    gamma_1 <- pi_1 * dnorm(X, mu_1, sd = sqrt(var_1)) / 
-      (pi_1 * dnorm(X, mu_1, sd = sqrt(var_1)) + pi_2 * dnorm(X, mu_2, sd = sqrt(var_2)))
-    gamma_2 <- pi_2 * dnorm(X, mu_2, sd = sqrt(var_2)) / 
-      (pi_1 * dnorm(X, mu_1, sd = sqrt(var_1)) + pi_2 * dnorm(X, mu_2, sd = sqrt(var_2)))
-    
-    # 3. M-Step 
+    # E-Step
+    gamma_1 <- pi_1 * dnorm(Y, mu_1, sd = sqrt(var_1)) /
+    (pi_1 * dnorm(Y, mu_1, sd = sqrt(var_1)) + pi_2 * dnorm(Y, mu_2, sd = sqrt(var_2)))
+    gamma_2 <- pi_2 * dnorm(Y, mu_2, sd = sqrt(var_2)) /
+    (pi_1 * dnorm(Y, mu_1, sd = sqrt(var_1)) + pi_2 * dnorm(Y, mu_2, sd = sqrt(var_2)))
+
+    # Store parameters
+    df <- rbind(df,
+                tibble(
+                  iter = iter,
+                  ll = ll,
+                  pi_1 = pi_1,
+                  pi_2 = pi_2,
+                  mu_1 = mu_1,
+                  mu_2 = mu_2,
+                  var_1 = var_1,
+                  var_2 = var_2,
+                  gamma_1 = list(gamma_1),
+                  gamma_2 = list(gamma_2))
+                )
+    # M-Step
     pi_1 <- sum(gamma_1)/N
     pi_2 <- sum(gamma_2)/N
-    mu_1 <-  sum(X * gamma_1) / sum(gamma_1)
-    mu_2 <-  sum(X * gamma_2) / sum(gamma_2)
-    var_1 <- sum((X - mu_1)^2 * gamma_1) / sum(gamma_1)
-    var_2 <- sum((X - mu_2)^2 * gamma_2) / sum(gamma_2)
+    mu_1 <-  sum(Y * gamma_1) / sum(gamma_1)
+    mu_2 <-  sum(Y * gamma_2) / sum(gamma_2)
+    var_1 <- sum((Y - mu_1)^2 * gamma_1) / sum(gamma_1)
+    var_2 <- sum((Y - mu_2)^2 * gamma_2) / sum(gamma_2)
     
-    # 4. Evaluate the log likelihood at the new parameter values 
-    ll.new <- log.lik(X = X, 
-                      pi_1 = pi_1, 
+    # Evaluate the log likelihood at the new parameter values
+    ll.new <- log_lik(Y = Y,
+                      pi_1 = pi_1,
                       pi_2 = pi_2,
-                      mu_1 = mu_1, 
-                      mu_2 = mu_2, 
-                      var_1 = var_1, 
+                      mu_1 = mu_1,
+                      mu_2 = mu_2,
+                      var_1 = var_1,
                       var_2 = var_2)
+    # Once the difference between likelihood in the last iterations, change convergence to finish the loop
+
     
-    # 5. Check convergence
     if(abs(ll - ll.new) < tol) {
       converged <- TRUE
-    }
-
-    # Onto the next iteration 
+      }
+    # Onto the next iteration
     iter <- iter + 1
-    
     # Give yourself a message to keep track of progress
-    cat(paste0("Running iteration ", iter, 
+    cat(paste0("Running iteration ", iter,
                ". Log likelihood changed by ", round(abs(ll - ll.new), 4), "\n"))
+    }
+  # Return the dataframe with the iterations information
+  return(df)
   }
-  
-  # When finished, save the parameter values 
-  params <- list(pi_1 = pi_1,
-                 pi_2 = pi_2, 
-                 mu_1 = mu_1, 
-                 mu_2 = mu_2, 
-                 var_1 = var_1,
-                 var_2 = var_2)
-  return(params)
-}
 
-waiting_values_1 <- list(pi_1 = .5, pi_2 = .5, mu_1 = 52, mu_2 = 80, var_1 = 10, var_2 = 10)
 
-em_waiting <- em_mixture(starting_values = waiting_values_1, X = waiting)
-em_waiting
+## Define starting values
+starting_values <- list(pi_1 = .5, pi_2 = .5, mu_1 = 50, mu_2 = 90, var_1 = 1, var_2 = 1)
+## Save the information ir the object em
+em <- em_mixture(starting_values = starting_values, Y = waiting)
 ```
 
 c.  (4 points) Generate a plot with the log likelihoods you saved on the y-axis and the iterations of the algorithm on the x-axis. Do the same thing with one or two parameters. Briefly describe and explain what you see.
 
 ```{r, echo = TRUE, include = TRUE}
+### Plot loglikelihood vs iterarions
 
+ggplot(em, aes(x = iter, y = ll)) +
+  geom_line() +
+  labs(title = "Log likelihood Vs. iterations",
+       x = "Iterations",
+       y = "Log likelihood") +
+  theme_light()
+
+### Plot loglikelihood vs iterarions without the first row
+em_1 <- em[-1, ]
+ggplot(em_1, aes(x = iter, y = ll)) +
+geom_line() +
+labs(title = "Log likelihood Vs. iterations",
+x = "Iterations",
+y = "Log likelihood") +
+theme_light()
+
+### Plot mu_1 vs iterarions
+ggplot(em, aes(x = iter, y = mu_1)) +
+geom_line() +
+labs(title = "mu_1 Vs. iterations",
+x = "Iterations",
+y = "mu_1") +
+theme_light()
 ```
 
 d.  (8 points) We now want to see whether the data points were classified similarly when using wait times vs. eruption duration.
@@ -140,7 +169,50 @@ d.  (8 points) We now want to see whether the data points were classified simila
 -   (4 points) Now, let's make two plots. In both plots, put eruption duration on the x-axis and wait times on the y-axis. In the first plot, color the points by their estimated probability of membership in the first cluster (short type) based on the wait times, and in the second plot color the points by their estimated probability of membership in the first cluster based on eruption duration. Put the plots side by side and make sure they are comparable to one another in axes, point colors, etc. Comment on what you see.
 
 ```{r, echo = TRUE, include = TRUE}
+### Run EM algorithm for eruptions
+eruptions = as.matrix(faithful[, 1, drop = FALSE])
+starting_values_e <- list(pi_1 = .5, pi_2 = .5, mu_1 = 2, mu_2 = 5, var_1 = 1, var_2 = 1)
+em_e <- em_mixture(starting_values = starting_values_e, Y = eruptions)
 
+### Include gamma 1 and gamma 2 for waiting ans eruptions in the data frame
+gamma_1_w <- unlist(em[13,9])
+gamma_1_e <- unlist(em_e[16,9])
+gamma_2_w <- unlist(em[13,10])
+gamma_2_e <- unlist(em_e[16,10])
+faithful2 <- cbind(faithful, gamma_1_w, gamma_2_w, gamma_1_e, gamma_2_e)
+
+### Correlation
+cor(gamma_1_w, gamma_1_e)
+
+cor(gamma_2_w, gamma_2_e)
+
+### Plot Eruptions vs Waiting with color the points by their estimated probability of membership in the first cluster (short type) on waiting time
+plot_w <- ggplot(faithful2,
+                 aes(x = eruptions,
+                     y = waiting,
+                     color = gamma_1_w)) +
+  geom_point() +
+  labs(title = "Eruptions vs Waiting times",
+       subtitle ="gamma_1_w: est prob of short type on waiting",
+       x = "Eruptions time",
+       y = "Waiting time") +
+  scale_color_gradient(low = "blue", high = "red")+
+  theme_minimal()
+
+plot_e <- ggplot(faithful2,
+                 aes(x = eruptions,
+                     y = waiting,
+                     color = gamma_1_e)) +
+  geom_point() +
+  labs(title = "Eruptions vs Waiting times",
+       subtitle ="gamma_1_e: est prob of short type on eruptions",
+       x = "Eruptions time",
+       y = "Waiting time") +
+  scale_color_gradient(low = "blue", high = "red")+
+  theme_minimal()
+
+### Arrange plots
+gridExtra::grid.arrange(plot_w, plot_e, ncol = 2)
 ```
 
 ## 2. The Law of Large Numbers and the Central Limit Theorem
@@ -173,10 +245,10 @@ avg_people_per_car <- sapply(samples, mean)
 
 # Plot the results
 plot(n_cars, avg_people_per_car, type = "l", 
-     xlab = "Sample size (number of cars)", 
-     ylab = "Average number of people per car", 
-     main = "Average number of people per car vs. sample size")
-abline(h = lambda, col = "blue")
+     xlab = "Sample Size (# of Cars)", 
+     ylab = "Average # of People per Car", 
+     main = "Average # of People per Car vs. Sample Size")
+abline(h = lambda, col = "red")
 
 ```
 
@@ -215,9 +287,9 @@ for (i in 1:length(n)) {
   replicates <- replicate(10000, mean(rpois(n[i], lambda)))
   
   # Plot the histogram
-  hist(replicates, breaks = 30, col = "gray", 
+  hist(replicates, breaks = 20, col = "gray", 
        main = paste0("Histogram of Sample Mean with n = ", n[i]), 
-       xlab = "Sample mean")
+       xlab = "Sample Mean")
   
   # Add a vertical line at the true mean
   abline(v = lambda, col = "red", lwd = 2)
@@ -226,24 +298,13 @@ for (i in 1:length(n)) {
 
 d.  (5 points) Suppose the city government will enact measures to regulate the number of people allowed per car during rush hour if they think the mean is below 1.7 people per car. Using the Normal approximation from part (b) above, find the probability that you get a mean of 1.7 **or less** in your sample of 100, even though the true mean is 2. (Please give the theoretical answer, not a simulation. You can use `R` as a calculator.) What should you do to ensure that this probability stays below 1%?
 
-```{r, echo = TRUE, include = TRUE}
-
-t_value <- sqrt(100)*((1.7 - h_mean) / approx_sd)
-
-prob2 <- pt(t_value, df = 99)
-
-cat("The probability of getting a 1.7 or less", prob, "\n")
-
-#T-value formula solve for a new value, find the score when prob is 0.01
-
-x_hat2 <- (( qt(0.01, df = 99) * approx_sd ) / 100) + 2
-
-cat("To ensure the probability stays below 1%, you need to make sure the mean number of cars is below", x_hat2, "\n")
-
-```
-
 ```{r}
-z_score <- (1.7 - h_mean) / approx_sd
+true_mean <- 2
+sigma <- sqrt(2)
+n_cars <- 100
+x_bar <- 1.7
+
+z_score <- (x_bar - true_mean) / (sigma / sqrt(n_cars))
 
 prob <- pnorm(z_score)
 
@@ -251,7 +312,7 @@ cat("The probability of getting a 1.7 or less", prob, "\n")
 
 #Z-score formula solve for a new value, find the score when prob is 0.01
 
-x_hat <- ( qnorm(0.01) * approx_sd ) + 2
+req_xbar <- ( qnorm(0.01) * (sigma / sqrt(n_cars)) ) + true_mean
 
-cat("To ensure the probability stays below 1%, you need to make sure the mean number of cars is", x_hat, "\n")
+cat("To ensure the probability stays below 1%, you need to make sure the mean number of people per car is less than or equal to", req_xbar, "\n")
 ```
