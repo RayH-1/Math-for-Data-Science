@@ -1,91 +1,156 @@
 ---
 title: "Math for Data Science: Problem Set 4"
 output: pdf_document
-author: "Name: YOUR_NAME, Group: GROUP_MEMBERS_NAMES" 
+author: "Name: Ray Hossain, Group: Monserrat Lopez Perez, Sai Prusni Bandela" 
 date: "2023-27-11"
 ---
-  
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(jpeg)
+library(factoextra)
 ```
 
 **Due Date:** Friday, December 8 by the end of the day. (The Moodle submission link will become inactive at midnight of December 9.)
 
-**Instructions:** Please submit one solution set per person and include your name and your group members' names at the top. This time, please write your solutions within this Rmd file, under the relevant question. Please submit the knitted output as a pdf. Make sure to show all code you used to arrive at the answer. However, please provide a brief, clear answer to every question rather than making us infer it from your output, and please avoid printing unnecessary output. 
+**Instructions:** Please submit one solution set per person and include your name and your group members' names at the top. This time, please write your solutions within this Rmd file, under the relevant question. Please submit the knitted output as a pdf. Make sure to show all code you used to arrive at the answer. However, please provide a brief, clear answer to every question rather than making us infer it from your output, and please avoid printing unnecessary output.
 
 ## 1. More Cat Compression
 
-(25 points.) I have another cat named Lev. He was upset that Laszlo got to be in my course materials and he didn't. In this exercise we will explain to Lev why my initial choice of Laszlo was nothing personal. 
+(25 points.) I have another cat named Lev. He was upset that Laszlo got to be in my course materials and he didn't. In this exercise we will explain to Lev why my initial choice of Laszlo was nothing personal.
 
-![My other cat, Lev.](lev.jpg){#id .class width=200}
+![My other cat, Lev.](lev.jpg){#id .class width="200"}
 
-a. (3 points) Load the image of Lev. Extract its red, green, and blue matrices and store them as separate objects called `r`, `g`, and `b`. Center the blue matrix and compute its variance-covariance matrix. What is the dimensionality of this variance-covariance matrix and why? 
+a.  (3 points) Load the image of Lev. Extract its red, green, and blue matrices and store them as separate objects called `r`, `g`, and `b`. Center the blue matrix and compute its variance-covariance matrix. What is the dimensionality of this variance-covariance matrix and why?
+
+```{r, echo = TRUE, include = TRUE}
+# load laszlo and plot
+lev <- readJPEG("lev.jpg")
+plot(1, type = "n") 
+rasterImage(lev, 0.7, 0.6, 1.3, 1.4)
+
+# store rgb components in separate matrices 
+r <- lev[,,1]
+g <- lev[,,2]
+b <- lev[,,3]
+```
+
+```{r}
+# center the data
+r.centered <- scale(b, center = TRUE, scale = FALSE)
+
+# make variance-covariance matrix 
+vc <- cov(r.centered)
+
+# check dimensions
+dim(vc)
+```
+
+The dimensionality of this variance-covariance matrix is 200 by 200. This is because...
+
+b.  (3 points) Find the total variance of this image. Compare this to the total variance of the centered blue matrix for Laszlo.
+
+```{r, echo = TRUE, include = TRUE}
+var.total <- sum(apply(r.centered, 2, function(x) sum(x^2))) / nrow(r.centered)
+
+# load laszlo 
+laszlo <- readJPEG("laszlo.jpg")
+
+# store blue components in separate matrix
+lazlo_b <- laszlo[,,3]
+lazlo_r.centered <- scale(lazlo_b, center = TRUE, scale = FALSE)
+lazlo_var.total <- sum(apply(lazlo_r.centered, 2, function(x) sum(x^2))) / nrow(lazlo_r.centered)
+
+print(var.total)
+print(lazlo_var.total)
+```
+
+There is a higher total variance of the blue matrix in the Laszlo image than in the Lev image.
+
+c.  (3 points) Use the `eigen` command to get the eigendecomposition of the blue variance-covariance matrix for Lev. Multiply the centered blue data matrix by the eigenvector corresponding to the largest eigenvalue to get the first principal component. Compute its variance.
+
+```{r, echo = TRUE, include = TRUE}
+eigs <- eigen(vc)
+
+# multiply centered data by first eigenvector
+pcr.1 <- r.centered %*% eigs$vectors[,1] #solving for z
+
+
+var.pcr.1 <- sum(pcr.1^2) / length(pcr.1)
+
+```
+
+d.  (3 points) Use the answers to the previous two questions to compute the proportion of variance explained for Lev's first principal component. Check your answer against a scree plot produced by the `fviz_eig` command.[^1] Compare to what we saw for Laszlo in the lab.
+
+[^1]: If they are similar up to the second decimal place, that's good enough.
+
+```{r, echo = TRUE, include = TRUE}
+var.pcr.1/var.total # data is 66% 
+
+
+# run pca 
+b.pca <- prcomp(b, center = TRUE, scale. = FALSE)
+
+
+# automatically compute the scree plot 
+fviz_eig(b.pca, main = "Blue", barfill = "blue", ncp = 5, addlabels = TRUE)
+```
+
+e.  (3 points) Now compute Lev's second principal component. Compute the covariance of the first principal component with the second.[^2] Is this what you expected? Comment briefly.
+
+[^2]: You can round to 10 decimal places.
+
+```{r, echo = TRUE, include = TRUE}
+#Take the first PCA and second PCA, then cov() them make sure that it is zero
+```
+
+f.  (5 points) Now let's run PCA on Lev's `r`, `g`, and `b` matrices using the `prcomp` function with the options `center=FALSE` and `scale.=FALSE`.[^3] Combine these objects into a list. Now, looping over a handful of numbers of principal components, reconstitute images of Lev as we did in Lab 9. How many principal components does it take to start to recognize Lev as a cat?
+
+[^3]: Scaling and centering is desirable when your variables are on different scales, but in this case it messes up the colors.
 
 ```{r, echo = TRUE, include = TRUE}
 
 ```
 
-b. (3 points) Find the total variance of this image. Compare this to the total variance of the centered blue matrix for Laszlo. 
+g.  (5 points) Using what you learned from parts (b), (d), and (f) above, explain why Lev requires more principal components to be minimally represented than Laszlo, despite being equally beautiful.
 
-```{r, echo = TRUE, include = TRUE}
-
-```
-
-c. (3 points) Use the `eigen` command to get the eigendecomposition of the blue variance-covariance matrix for Lev. Multiply the centered blue data matrix by the eigenvector corresponding to the largest eigenvalue to get the first principal component. Compute its variance. 
-
-```{r, echo = TRUE, include = TRUE}
-
-```
-
-d. (3 points) Use the answers to the previous two questions to compute the proportion of variance explained for Lev's first principal component. Check your answer against a scree plot produced by the `fviz_eig` command.^[If they are similar up to the second decimal place, that's good enough.] Compare to what we saw for Laszlo in the lab. 
-
-```{r, echo = TRUE, include = TRUE}
-
-```
-
-e. (3 points) Now compute Lev's second principal component. Compute the covariance of the first principal component with the second.^[You can round to 10 decimal places.] Is this what you expected? Comment briefly. 
-
-```{r, echo = TRUE, include = TRUE}
-
-```
-
-f. (5 points) Now let's run PCA on Lev's `r`, `g`, and `b` matrices using the `prcomp` function with the options `center=FALSE` and `scale.=FALSE`.^[Scaling and centering is desirable when your variables are on different scales, but in this case it messes up the colors.] Combine these objects into a list. Now, looping over a handful of numbers of principal components, reconstitute images of Lev as we did in Lab 9. How many principal components does it take to start to recognize Lev as a cat? 
-
-```{r, echo = TRUE, include = TRUE}
-
-```
-
-g. (5 points) Using what you learned from parts (b), (d), and (f) above, explain why Lev requires more principal components to be minimally represented than Laszlo, despite being equally beautiful. 
-
-## 2. Penalized Regression 
+## 2. Penalized Regression
 
 \newcommand{\m}[1]{\mathbf{#1}}
-(25 points.) We will derive the estimator for ridge regression, which is one of several *penalized regression* methods.^[See p. 237-244 of ISL.] The process we will follow is very similar to the standard regression estimator we derived in Lab 8, but with a small change to the loss function. Rather than minimizing the sum of squared errors, we will minimize the sum of squared errors subject to a constraint: 
 
-\[  ||\beta||_2^2 \leq s \]
+(25 points.) We will derive the estimator for ridge regression, which is one of several *penalized regression* methods.[^4] The process we will follow is very similar to the standard regression estimator we derived in Lab 8, but with a small change to the loss function. Rather than minimizing the sum of squared errors, we will minimize the sum of squared errors subject to a constraint:
 
-where $s$ is just some constant chosen by the analyst. Recall that $||\beta||_2^2$ is the squared $L_2$ norm of the $\beta$ vector.^[Also known as the Euclidian norm.] This question will build on the concepts and data in Lab 8, so please revisit that lab if anything here is unclear.
+[^4]: See p. 237-244 of ISL.
 
-a. (2 points) Write down the Lagrangian for this constrained minimization problem. Please use matrix notation (including for the $L_2$ norm) as we did in Lab 8. 
+$$  ||\beta||_2^2 \leq s $$
 
-b. (7 points) Take the first derivative of the Lagrangian with respect to $\beta$ and set it equal to $\m{0}$ to get the first order condition. Use the \href{https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf}{Matrix Cookbook} to help you. Solve for $\hat{\beta}$. 
+where $s$ is just some constant chosen by the analyst. Recall that $||\beta||_2^2$ is the squared $L_2$ norm of the $\beta$ vector.[^5] This question will build on the concepts and data in Lab 8, so please revisit that lab if anything here is unclear.
 
-c. (3 points) Compare your answer to the standard linear regression estimator. Under what condition are they the same? 
+[^5]: Also known as the Euclidian norm.
 
-d. (5 points) Using the same `BostonHousing` dataset and the same set of variables from Lab 8, compute the ridge regression $\hat{\beta}$ with the equation you found in part (b) above. First standardize your $\m{X}$ matrix using the `scale()` function in `R`. Use the `glmnet()` function in the `glmnet` package to check your answer.^[Note that `glmnet`'s `lambda` parameter corresponds to your $\frac{\lambda}{N}$, where $N$ is the number of rows of your data. Also, your estimates may differ slightly from `glmnet`'s, at around the second decimal place. That's alright; this is likely due to `glmnet`'s optimization algorithm. It's computationally expensive to invert large matrices so `glmnet` is probably taking some more efficient but (slightly) less precise approach.]
+a.  (2 points) Write down the Lagrangian for this constrained minimization problem. Please use matrix notation (including for the $L_2$ norm) as we did in Lab 8.
+
+b.  (7 points) Take the first derivative of the Lagrangian with respect to $\beta$ and set it equal to $\mathbf{0}$ to get the first order condition. Use the \href{https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf}{Matrix Cookbook} to help you. Solve for $\hat{\beta}$.
+
+c.  (3 points) Compare your answer to the standard linear regression estimator. Under what condition are they the same?
+
+d.  (5 points) Using the same `BostonHousing` dataset and the same set of variables from Lab 8, compute the ridge regression $\hat{\beta}$ with the equation you found in part (b) above. First standardize your $\mathbf{X}$ matrix using the `scale()` function in `R`. Use the `glmnet()` function in the `glmnet` package to check your answer.[^6]
+
+[^6]: Note that `glmnet`'s `lambda` parameter corresponds to your $\frac{\lambda}{N}$, where $N$ is the number of rows of your data. Also, your estimates may differ slightly from `glmnet`'s, at around the second decimal place. That's alright; this is likely due to `glmnet`'s optimization algorithm. It's computationally expensive to invert large matrices so `glmnet` is probably taking some more efficient but (slightly) less precise approach.
 
 ```{r, echo = TRUE, include = TRUE}
 
 ```
 
-e. (3 points) For the sequence of lambdas below, make a plot with `lambda_seq` on the $x$-axis (increasing from 0 to 100) and the estimated $\beta$ coefficients for per capita crime rate in the town (in blue), proximity to the Charles River (in red), and nitric oxides concentration (in green) on the $y$-axis. Use `geom_line` to plot the coefficients and add a black horizontal line at $y=0$. Label your axes and include a legend.
+e.  (3 points) For the sequence of lambdas below, make a plot with `lambda_seq` on the $x$-axis (increasing from 0 to 100) and the estimated $\beta$ coefficients for per capita crime rate in the town (in blue), proximity to the Charles River (in red), and nitric oxides concentration (in green) on the $y$-axis. Use `geom_line` to plot the coefficients and add a black horizontal line at $y=0$. Label your axes and include a legend.
 
 ```{r, echo = FALSE, include = TRUE}
 lambda_seq <- c(10^seq(2, -1, by = -.1), 0)
 
 ```
 
-f. (5 points) Discussion:
-- Based on your plot above, explain why ridge is one of a number of so-called "shrinkage" estimators. 
-- Tie this back to the constrained optimization problem you solved to obtain the ridge regression $\hat{\beta}$. Can you see how a larger value of $\lambda$ (or equivalently a small value of $s$) corresponds to greater shrinkage? 
-- You will learn more about this class of estimators and their virtues next semester, but do you have any intuitions as to when and why they might be desirable? 
+f.  (5 points) Discussion:
+
+-   Based on your plot above, explain why ridge is one of a number of so-called "shrinkage" estimators.
+-   Tie this back to the constrained optimization problem you solved to obtain the ridge regression $\hat{\beta}$. Can you see how a larger value of $\lambda$ (or equivalently a small value of $s$) corresponds to greater shrinkage?
+-   You will learn more about this class of estimators and their virtues next semester, but do you have any intuitions as to when and why they might be desirable?
