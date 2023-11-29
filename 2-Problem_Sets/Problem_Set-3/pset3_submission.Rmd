@@ -11,8 +11,12 @@ params:
   soln: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, global_options, include=FALSE}
+knitr::opts_chunk$set(message=FALSE, tidy.opts=list(width.cutoff=60), tidy=TRUE) 
+
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
 ```
 
 **Due Date:** Monday, November 20 by the end of the day. (The Moodle submission link will become inactive at midnight of November 21.)
@@ -26,12 +30,8 @@ knitr::opts_chunk$set(echo = TRUE)
 a.  (2 points) Load the data. Plot a histogram with a density curve for time until next eruption, as we did for eruption duration in the lab.
 
 ```{r, echo = TRUE, include = TRUE}
-library(tidyverse)
-library(ggplot2)
-library(gridExtra)
-
 data(faithful)
-head(faithful)
+
 
 waiting  = as.matrix(faithful[, 2, drop = FALSE])
 h <- hist(waiting, col = "grey", bor = "darkgrey", breaks = 24, prob = TRUE, 
