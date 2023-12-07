@@ -20,6 +20,7 @@ Today we will practice matrix algebra and calculus with an application that you 
 To make things concrete, let's use a real dataset of median home values in Boston. Load the dataset `BostonHousing` from the `mlbench` package. Take a look at the data. You can read the documentation \href{https://www.rdocumentation.org/packages/mlbench/versions/2.1-3.1/topics/BostonHousing}{here}. What are the included variables? What is the unit of analysis?
 
 ```{r, echo = FALSE, include = TRUE}
+library(tidyverse)
 library(mlbench)
 data(BostonHousing)
 ```
