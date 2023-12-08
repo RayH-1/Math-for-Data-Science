@@ -193,16 +193,25 @@ b.  (7 points) Take the first derivative of the Lagrangian with respect to $\bet
 
 $$\downarrow expand $$
 
-$$ \mathcal{L} = Y^T Y-2 \beta^T X^T Y + \beta^TX^TX\beta + \lambda\beta^T \beta -\lambda s = 0 $$
+$$ \frac{\partial \mathcal{L}}{\partial \beta}  = Y^T Y-2 \beta^T X^T Y + \beta^TX^TX\beta + \lambda\beta^T \beta -\lambda s = 0 $$
 
 $$ \downarrow derive $$
 
-$$ 0 =-2 X^T Y+ 2X^T X \beta+2 \lambda\beta $$
+$$ 0 =-2 X^T Y+ 2X^T X \beta+2 \lambda\beta $$ Dividing both sides by 2 and factor out $\beta$, then multiply both side by the inverse to isolate $\hat{\beta}$:
+
 $$ X^T Y = (X^T X + \lambda)\beta $$
 
 $$ \hat{\beta} = (X^TX+\lambda I)^{-1}X^TY $$
 
 c.  (3 points) Compare your answer to the standard linear regression estimator. Under what condition are they the same?
+
+In standard linear regression, the estimator is given by:
+
+$$ \hat{\beta}_{\text{OLS}} = (\mathbf{X}^T \mathbf{X})^{-1} \mathbf{X}^T \mathbf{Y} $$
+
+Comparing this with the ridge regression estimator from the previous response:
+
+$$ \hat{\beta}_{\text{ridge}} = (\mathbf{X}^T \mathbf{X} + \lambda \mathbf{I})^{-1} \mathbf{X}^T \mathbf{Y} $$
 
 They are the same when $\lambda$ is equal to zero.
 
