@@ -51,8 +51,6 @@ vc <- cov(b.centered)
 dim(vc)
 ```
 
-The dimensions of this variance-covariance matrix is 200 by 200. This is because of the shape of the image itself.
-
 b.  (3 points) Find the total variance of this image. Compare this to the total variance of the centered blue matrix for Laszlo.
 
 ```{r, echo = TRUE, include = TRUE}
@@ -69,8 +67,6 @@ lazlo_var.total <- sum(apply(lazlo_b.centered, 2, function(x) sum(x^2))) / nrow(
 print(var.total)
 print(lazlo_var.total)
 ```
-
-There is a higher total variance of the blue matrix in the Laszlo image than in the Lev image. This likely has to do with the contrast between the two.
 
 c.  (3 points) Use the `eigen` command to get the eigendecomposition of the blue variance-covariance matrix for Lev. Multiply the centered blue data matrix by the eigenvector corresponding to the largest eigenvalue to get the first principal component. Compute its variance.
 
@@ -111,11 +107,9 @@ e.  (3 points) Now compute Lev's second principal component. Compute the covaria
 pcb.2 <- b.centered %*% eigs$vectors[,2]
 
 
-round(cov(pcb.1, pcb.2), 12)
+cov(pcb.1, pcb.2)
 
 ```
-
-This output is zero. Which signifies that there is no covariance between the two principal components. This is what we expected because the first principal component is 66.9% of the data. Meanwhile the second principal component does not intersect with the first 66.9%, it is its own seperate 11.7% of the data.
 
 f.  (5 points) Now let's run PCA on Lev's `r`, `g`, and `b` matrices using the `prcomp` function with the options `center=FALSE` and `scale.=FALSE`.[^3] Combine these objects into a list. Now, looping over a handful of numbers of principal components, reconstitute images of Lev as we did in Lab 9. How many principal components does it take to start to recognize Lev as a cat?
 
@@ -165,8 +159,6 @@ rasterImage(photo_100, 0.7, 0.6, 1.3, 1.4)
 
 g.  (5 points) Using what you learned from parts (b), (d), and (f) above, explain why Lev requires more principal components to be minimally represented than Laszlo, despite being equally beautiful.
 
-This is because there is more variance in the Lazlo image so its easier to distinguish him from the background. The Lev image has less variance so it requires more principal components to minimally represent him. This has to due with the fact there is more contrast in the Lazlo image, resulting in a higher variance, which results in less principal components needed to represent him.
-
 ## 2. Penalized Regression
 
 \newcommand{\m}[1]{\mathbf{#1}}
@@ -183,27 +175,9 @@ where $s$ is just some constant chosen by the analyst. Recall that $||\beta||_2^
 
 a.  (2 points) Write down the Lagrangian for this constrained minimization problem. Please use matrix notation (including for the $L_2$ norm) as we did in Lab 8.
 
-$$  ||\beta||_2^2 \leq s \rightarrow  \beta^T\beta-s $$
-
-$$\begin{aligned} \sum_{i=1}^n \varepsilon_i^2 \rightarrow & \sum(Y-X \beta)^2 \rightarrow  (Y-X \beta)^T(Y-X\beta)\end{aligned}$$
-
-$$ \mathcal{L} = (Y-X \beta)^T(Y-X \beta)+\lambda(\beta^T\beta-s) $$
-
 b.  (7 points) Take the first derivative of the Lagrangian with respect to $\beta$ and set it equal to $\mathbf{0}$ to get the first order condition. Use the \href{https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf}{Matrix Cookbook} to help you. Solve for $\hat{\beta}$.
 
-$$\downarrow expand $$
-
-$$ \mathcal{L} = Y^T Y-2 \beta^T X^T Y + \beta^TX^TX\beta + \lambda\beta^T \beta -\lambda s = 0 $$
-
-$$ \downarrow derive $$
-
-$$ -2 X^T Y+ 2X^T X \beta+2 X \beta $$
-
-$$ \hat{\beta} = (X^TX+^\lambda I)^{-1}X^TY $$
-
 c.  (3 points) Compare your answer to the standard linear regression estimator. Under what condition are they the same?
-
-They are the same when $\lambda$ is equal to zero.
 
 d.  (5 points) Using the same `BostonHousing` dataset and the same set of variables from Lab 8, compute the ridge regression $\hat{\beta}$ with the equation you found in part (b) above. First standardize your $\mathbf{X}$ matrix using the `scale()` function in `R`. Use the `glmnet()` function in the `glmnet` package to check your answer.[^6]
 
@@ -300,5 +274,3 @@ f.  (5 points) Discussion:
 -   Based on your plot above, explain why ridge is one of a number of so-called "shrinkage" estimators.
 -   Tie this back to the constrained optimization problem you solved to obtain the ridge regression $\hat{\beta}$. Can you see how a larger value of $\lambda$ (or equivalently a small value of $s$) corresponds to greater shrinkage?
 -   You will learn more about this class of estimators and their virtues next semester, but do you have any intuitions as to when and why they might be desirable?
-
-Shrinkage estimators can help to reduce the variance of the estimates and improve predictive performance. Ridge is a "shrinkage estimator" because it penalizes the s and lambda. The graph above shows that as lambda increases, so does the magnitude of the coefficients from zero but it comes back down towards zero.
